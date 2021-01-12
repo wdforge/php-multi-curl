@@ -14,6 +14,11 @@ class Curl
      */
     protected $response;
 
+  /**
+   * @var array
+   */
+    protected $metaData = [];
+
     protected $multi = false;
 
     protected $options = [];
@@ -114,21 +119,98 @@ class Curl
         }
     }
 
-    public function exec()
+  /**
+   * @param array $options
+   * @return Response
+   */
+    public function exec($options = [])
     {
+        $this->metaData = [];
         if ($this->multi) {
             $responseStr = curl_multi_getcontent($this->handle);
         } else {
             $responseStr = curl_exec($this->handle);
         }
 
-        $errno = curl_errno($this->handle);
-        $errstr = curl_error($this->handle);//Fix: curl_errno() always return 0 when fail
-        $url = curl_getinfo($this->handle, CURLINFO_EFFECTIVE_URL);
-        $code = curl_getinfo($this->handle, CURLINFO_HTTP_CODE);
+        foreach ($options as $option) {
+          switch($option) {
+            case CURLINFO_FILETIME:
+              $fileTime = curl_getinfo($this->handle, CURLINFO_FILETIME);
+              $this->metaData['fileTime'] = $fileTime != -1 ? date('Y-m-d H:i:s', $fileTime) : null;
+              break;
+            case CURLINFO_REDIRECT_COUNT:
+              $this->metaData['redirectCount'] = curl_getinfo($this->handle, CURLINFO_REDIRECT_COUNT);
+              break;
+            case CURLINFO_TOTAL_TIME:
+              $this->metaData['totalTime'] = curl_getinfo($this->handle, CURLINFO_TOTAL_TIME);
+              break;
+            case CURLINFO_NAMELOOKUP_TIME:
+              $this->metaData['nameLookupTime'] = curl_getinfo($this->handle, CURLINFO_NAMELOOKUP_TIME);
+              break;
+            case CURLINFO_CONNECT_TIME:
+              $this->metaData['connectTime'] = curl_getinfo($this->handle, CURLINFO_CONNECT_TIME);
+              break;
+            case CURLINFO_PRETRANSFER_TIME:
+              $this->metaData['preTransferTime'] = curl_getinfo($this->handle, CURLINFO_PRETRANSFER_TIME);
+              break;
+            case CURLINFO_REDIRECT_TIME:
+              $this->metaData['redirectTime'] = curl_getinfo($this->handle, CURLINFO_REDIRECT_TIME);
+              break;
+            case CURLINFO_STARTTRANSFER_TIME:
+              $this->metaData['startTransferTime'] = curl_getinfo($this->handle, CURLINFO_STARTTRANSFER_TIME);
+              break;
+            case CURLINFO_REDIRECT_URL:
+              $this->metaData['redirectUrl'] = curl_getinfo($this->handle, CURLINFO_REDIRECT_URL);
+              break;
+            case CURLINFO_EFFECTIVE_URL:
+              $this->metaData['redirectEffectiveUrl'] = curl_getinfo($this->handle, CURLINFO_EFFECTIVE_URL);
+              break;
+            case CURLINFO_PRIMARY_IP:
+              $this->metaData['ipAddress'] = curl_getinfo($this->handle, CURLINFO_PRIMARY_IP);
+              break;
+            case CURLINFO_SPEED_DOWNLOAD:
+              $this->metaData['speedDownload'] = curl_getinfo($this->handle, CURLINFO_SPEED_DOWNLOAD);
+              break;
+            case CURLINFO_SPEED_UPLOAD:
+              $this->metaData['speedUpload'] = curl_getinfo($this->handle, CURLINFO_SPEED_UPLOAD);
+              break;
+            case CURLINFO_SSL_VERIFYRESULT:
+              $this->metaData['sslVerifyResult'] = curl_getinfo($this->handle, CURLINFO_SSL_VERIFYRESULT);
+              break;
+            case CURLINFO_SSL_ENGINES:
+              $this->metaData['sslEngine'] = curl_getinfo($this->handle, CURLINFO_SSL_ENGINES);
+              break;
+            case CURLINFO_CONTENT_TYPE:
+              $this->metaData['contentType'] = curl_getinfo($this->handle, CURLINFO_CONTENT_TYPE);
+              break;
+            case CURLINFO_LOCAL_IP:
+              $this->metaData['localIp'] = curl_getinfo($this->handle, CURLINFO_LOCAL_IP);
+              break;
+            case CURLINFO_LOCAL_PORT:
+              $this->metaData['localPort'] = curl_getinfo($this->handle, CURLINFO_LOCAL_PORT);
+              break;
+            case CURLINFO_SIZE_UPLOAD:
+              $this->metaData['sizeUpload'] = curl_getinfo($this->handle, CURLINFO_SIZE_UPLOAD);
+              break;
+            case CURLINFO_SIZE_DOWNLOAD:
+              $this->metaData['sizeDownload'] = curl_getinfo($this->handle, CURLINFO_SIZE_DOWNLOAD);
+              break;
+          }
+        }
+
+        $this->metaData['errno'] = curl_errno($this->handle);
+        $this->metaData['errstr'] = curl_error($this->handle);//Fix: curl_errno() always return 0 when fail
+        $this->metaData['url'] = curl_getinfo($this->handle, CURLINFO_EFFECTIVE_URL);
+        $this->metaData['code'] = curl_getinfo($this->handle, CURLINFO_HTTP_CODE);
         $headerSize = curl_getinfo($this->handle, CURLINFO_HEADER_SIZE);
-        $this->response = Response::make($url, $code, $responseStr, $headerSize, [$errno, $errstr]);
+        $this->response = Response::make($this->metaData['url'], $this->metaData['code'], $responseStr, $headerSize, [$this->metaData['errno'], $this->metaData['errstr']]);
+
         return $this->response;
+    }
+
+    public function getMetaData()
+    {
+      return $this->metaData;
     }
 
     public function setMulti($isMulti)

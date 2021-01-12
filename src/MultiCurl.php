@@ -70,7 +70,7 @@ class MultiCurl
         //Clean to re-exec && check success
         $success = true;
         foreach ($this->curls as $curl) {
-            $curl->exec();
+            $curl->exec($options);
             if ($curl->getResponse()->hasError()) {
                 $success = false;
             }
