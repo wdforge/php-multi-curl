@@ -65,10 +65,21 @@ class Response
         return $this->body;
     }
 
-    public static function parse($responseStr, $headerSize)
+    public static function parse(&$responseStr, $headerSize)
     {
-        $header = substr($responseStr, 0, $headerSize);
-        $body = substr($responseStr, $headerSize);
+        if (mb_strlen($responseStr) == $headerSize) {
+            ['', ''];
+        }
+
+        $tempFile = tmpfile();
+        $size = fwrite($tempFile, $responseStr);
+        unset($responseStr);
+        $responseStr = NULL;
+        fseek($tempFile, 0);
+        $header = fread($tempFile, $headerSize);
+        $body = fread($tempFile, $size - $headerSize);
+        fclose($tempFile);
+
         $lines = explode("\n", $header);
         array_shift($lines);//Remove status
 

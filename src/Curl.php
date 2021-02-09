@@ -6,7 +6,8 @@ class Curl
 {
     protected $id;
     protected $handle;
-
+    protected $maxGetSize = 0;
+    protected $bufferSize = 0;
     protected $meetPhp55 = false;
 
     /**
@@ -82,7 +83,20 @@ class Curl
             }
         }
 
-        curl_setopt_array($this->handle, [CURLOPT_URL => $url, CURLOPT_HTTPGET => true]);
+
+        if ($this->bufferSize) {
+            curl_setopt($this->handle, CURLOPT_BUFFERSIZE, $this->bufferSize);
+        }
+
+        if ($this->maxGetSize) {
+            curl_setopt($this->handle, CURLOPT_NOPROGRESS, false);
+            curl_setopt($this->handle, CURLOPT_PROGRESSFUNCTION, function($handle, $downloadSize, $downloaded, $uploadSize, $uploaded) {
+               return ($downloaded >= $this->maxGetSize) ? 1 : 0;
+            });
+        }
+
+        curl_setopt($this->handle, CURLOPT_URL, $url);
+        curl_setopt($this->handle, CURLOPT_HTTPGET, true);
 
         if (!empty($headers)) {
             curl_setopt($this->handle, CURLOPT_HTTPHEADER, $headers);
@@ -211,6 +225,16 @@ class Curl
     public function getMetaData()
     {
       return $this->metaData;
+    }
+
+    public function setMaxGetSize($maxSize)
+    {
+        $this->maxGetSize = $maxSize;
+    }
+
+    public function setBufferSize($bufferSize)
+    {
+        $this->bufferSize = $bufferSize;
     }
 
     public function setMulti($isMulti)
