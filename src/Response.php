@@ -65,9 +65,11 @@ class Response
         return $this->body;
     }
 
-    public static function parse(&$responseStr, $headerSize)
+    public static function parse(&$responseStr, $headerSize, $url = null)
     {
-        if (mb_strlen($responseStr) == $headerSize) {
+
+        if (mb_strlen($responseStr) == $headerSize || !$size || !$headerSize) {
+            error_log('[Hhxsv5\PhpMultiCurl\Response] Empty params for parsing response :'.$url);
             ['', ''];
         }
 
@@ -77,7 +79,7 @@ class Response
         $responseStr = NULL;
         fseek($tempFile, 0);
         $header = fread($tempFile, $headerSize);
-        $body = fread($tempFile, $size - $headerSize);
+        $body = fread($tempFile, $size);
         fclose($tempFile);
 
         $lines = explode("\n", $header);
@@ -106,7 +108,7 @@ class Response
             $headers = [];
             $body = '';
         } else {
-            list($headers, $body) = static::parse($responseStr, $headerSize);
+            list($headers, $body) = static::parse($responseStr, $headerSize, $url);
         }
         return new static($url, $code, $body, $headers, $error);
     }
