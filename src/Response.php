@@ -67,14 +67,13 @@ class Response
 
     public static function parse(&$responseStr, $headerSize, $url = null)
     {
-
-        if (mb_strlen($responseStr) == $headerSize || !$size || !$headerSize) {
-            error_log('[Hhxsv5\PhpMultiCurl\Response] Empty params for parsing response :'.$url);
-            ['', ''];
-        }
-
         $tempFile = tmpfile();
         $size = fwrite($tempFile, $responseStr);
+        if (mb_strlen($responseStr) == $headerSize || !$size || !$headerSize) {
+            fclose($tempFile);
+            error_log('[Hhxsv5\PhpMultiCurl\Response] Empty params for parsing response :'.$url);
+            return ['', '']; 
+        }
         unset($responseStr);
         $responseStr = NULL;
         fseek($tempFile, 0);
