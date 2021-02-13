@@ -218,15 +218,16 @@ class Curl
     $this->metaData['url'] = curl_getinfo($this->handle, CURLINFO_EFFECTIVE_URL);
     $this->metaData['code'] = curl_getinfo($this->handle, CURLINFO_HTTP_CODE);
 
-    if (in_array($this->metaData['code'], [301, 302]) && isset($this->metaData['redirectUrl'])) {
+    if (in_array($this->metaData['code'], [301, 302])) {
       if ($this->metaData['redirectCount'] == $this->maxRedirectCount) {
         return $this->response;
       }
 
       if ($this->method === 'GET') {
-        $this->makeGet($this->metaData['redirectUrl']);
+        $this->response = $this->makeGet($this->metaData['url']);
+        
       } elseif ($this->method = 'POST') {
-        $this->makePost($this->metaData['redirectUrl']);
+        $this->response = $this->makePost($this->metaData['url']);
       }
 
       $this->response = $this->exec($options);

@@ -71,19 +71,28 @@ class Response
     $size = fwrite($tempFile, $responseStr);
     fseek($tempFile, 0);
 
-    if (!$size || !$headerSize) {
+    if (!$headerSize) {
+      $header = $responseStr;
+    } else {
+      $header = fread($tempFile, $headerSize);
+    }
+
+    if (!$header) {
       fclose($tempFile);
-      error_log('[Hhxsv5\PhpMultiCurl\Response] Empty params for parsing response :' . $url);
+      error_log('[Hhxsv5\PhpMultiCurl\Response] Empty params for parsing response :'."\n" . $responseStr);
       return [[], ''];
     }
 
-    $header = fread($tempFile, $headerSize);
-
     unset($responseStr);
     $responseStr = NULL;
-    $body = fread($tempFile, $size);
-    fclose($tempFile);
 
+    if ($headerSize) {
+      $body = fread($tempFile, $size);
+    } else {
+      $body = '';
+    }
+
+    fclose($tempFile);
     $lines = explode("\n", $header);
     array_shift($lines);//Remove status
 
